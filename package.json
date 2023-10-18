@@ -1,0 +1,19 @@
+{
+  "name": "raidboxes-premium-member",
+  "version": "0.1.0",
+  "description": "Raidboxes Premium Member Plugin",
+  "main": "premium-member.php",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dominicvogl/raidboxes-premium-member.git"
+  },
+  "keywords": [],
+  "author": "Dominic Vogl <dominic.vogl@cat-ia.de>",
+  "homepage": "https://github.com/username/repository#readme",
+  "dependencies": {
+    "bootstrap": "5.3.2"
+  }
+}

@@ -23,10 +23,14 @@ class PremiumMember {
     public function __construct() {
 
         add_action( 'init', array($this, 'plugin_init') );
+
     }
 
     public function plugin_init() {
         add_shortcode('user_register_form', array($this, 'registration_form'));
+
+        add_action( 'wp_enqueue_scripts', array( $this, 'plugin_stylesheets' ) );
+        // other add_action() or add_filter() calls
     }
 
     public function install_plugin() {
@@ -35,6 +39,13 @@ class PremiumMember {
 
     public function uninstall_plugin() {
         // handle uninstall process
+    }
+
+    public function plugin_stylesheets() {
+        $bootstrap_css_url = plugins_url( 'node_modules/bootstrap/dist/css/bootstrap.min.css', __FILE__ );
+
+        // Enqueue bootstrap style
+        wp_enqueue_style( 'plugin-bootstrap-style', $bootstrap_css_url );
     }
 
 
@@ -52,7 +63,7 @@ class PremiumMember {
         if(!is_user_logged_in()) {
 
             // check for options in settings, if user are allowed to register
-            if(get_option('user_can_register')) {
+            if(get_option('users_can_register')) {
                 $output = $this->registration_form_fields();
             }
             // if not, display a message
@@ -64,8 +75,34 @@ class PremiumMember {
         return $output;
     }
 
-    public function registration_form_fields(): string {
-        return '';
+    public function registration_form_fields() {
+        ob_start();
+        ?>
+
+        <form>
+            <div class="mb-3">
+                <label for="rpm_user_name" class="form-label"><?php _e('Username', 'raidboxes_premium_member'); ?></label>
+                <input type="text" class="form-control" id="rpm_user_name">
+            </div>
+
+            <div class="mb-3">
+                <label for="exampleInputEmail1" class="form-label"><?php _e('Username', 'raidboxes_premium_member'); ?></label>
+                <input type="email" class="form-control" id="rpm_user_email" aria-describedby="emailHelp">
+                <div id="emailHelp" class="form-text"><?php _e("We'll never share your email with anyone else.", "raidboxes_premium_member"); ?></div>
+            </div>
+            <div class="mb-3">
+                <label for="exampleInputPassword1" class="form-label">Password</label>
+                <input type="password" class="form-control" id="exampleInputPassword1">
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                <label class="form-check-label" for="exampleCheck1">Check me out</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+
+        <?php
+        return ob_get_clean();
     }
 
     public function add_user_role(): void
