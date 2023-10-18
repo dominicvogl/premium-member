@@ -45,7 +45,23 @@ class PremiumMember {
     public function registration_form(): string
     {
 
-      return '';  
+        // default message when you are logged in
+        $output = __('You are still logged in', 'raidboxes_premium_member');
+
+        // if user is not logged in, display the form
+        if(!is_user_logged_in()) {
+
+            // check for options in settings, if user are allowed to register
+            if(get_option('user_can_register')) {
+                $output = $this->registration_form_fields();
+            }
+            // if not, display a message
+            else {
+                $output = __('User registration is not possible at the moment', 'raidboxes_premium_member');
+            }
+        }
+
+        return $output;
     }
 
     public function registration_form_fields(): string {
