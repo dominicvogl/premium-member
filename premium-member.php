@@ -219,7 +219,7 @@ class PremiumMember
 		// Reset content type to default
 		remove_filter('wp_mail_content_type', 'set_html_content_type');
 
-		return;
+		return true;
 	}
 
 	public function verify_account()
@@ -241,7 +241,7 @@ class PremiumMember
 				]);
 
 				// check if new user was created
-				if($new_user_id) {
+				if(!is_wp_error($new_user_id)) {
 					// if new user was created, send mail to admin
 					wp_new_user_notification($new_user_id, null, 'both');
 
@@ -252,15 +252,11 @@ class PremiumMember
 					wp_set_current_user($new_user_id, $user_data['user_login']);
 					do_action('wp_login', $user_data['user_login']);
 
+					// remove key after registration
+					delete_option('pm_' . $verification_key);
+
 					// redirect new user to user detail page
 					wp_redirect(home_url() . '/user-detail-page/');
-				}
-
-				if (!is_wp_error($new_user_id)) {
-					// Benutzer erfolgreich erstellt, entfernen Sie die Option
-					delete_option('pm_' . $verification_key);
-					// An dieser Stelle würden Sie den Benutzer wahrscheinlich zu einer "Erfolg"-Seite umleiten
-					wp_redirect(home_url());
 				}
 			}
 		}
@@ -329,6 +325,7 @@ class PremiumMember
 					<td><label for="user_pass"><?php _e('Password:', 'raidboxes_premium_member'); ?></label></td>
 					<td>
 						<input type="text" id="user_pass" class="form-control" readonly value="<?php echo esc_attr__($current_user->user_pass); ?>" aria-describedby="helpBlock">
+						<p class="alert alert-warning">Here you can think about whether you should really output the password as plain text or not. (Keyword: Security)</p>
 					</td>
 				</tr>
 			</table>
