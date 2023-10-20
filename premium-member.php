@@ -123,30 +123,10 @@ class PremiumMember
                     <div id="emailHelp"
                          class="form-text"><?php _e("We'll never share your email with anyone else.", "raidboxes_premium_member"); ?></div>
                 </div>
-                <div class="mb-3">
-                    <label for="rpm_user_first"
-                           class="form-label"><?php _e('First Name', 'raidboxes_premium_member'); ?></label>
-                    <input type="text" class="form-control" id="rpm_user_first" name="rpm_user_first">
-                </div>
-                <div class="mb-3">
-                    <label for="rpm_user_last"
-                           class="form-label"><?php _e('Last Name', 'raidboxes_premium_member'); ?></label>
-                    <input type="text" class="form-control" id="rpm_user_last" name="rpm_user_last">
-                </div>
-                <div class="mb-3">
-                    <label for="rpm_user_pass"
-                           class="form-label"><?php _e('Password', 'raidboxes_premium_member'); ?></label>
-                    <input type="password" class="form-control" id="rpm_user_pass" name="rpm_user_pass">
-                </div>
-                <div class="mb-3">
-                    <label for="rpm_user_pass_confirm"
-                           class="form-label"><?php _e('Password confirmation', 'raidboxes_premium_member'); ?></label>
-                    <input type="password" class="form-control" id="rpm_user_pass_confirm" name="rpm_user_pass_confirm">
-                </div>
 
                 <input type="hidden" name="rpm_nonce" value="<?php echo wp_create_nonce('rpm-nonce'); ?>"/>
 
-                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn btn-lg btn-success">Submit</button>
 
             </fieldset>
         </form>
