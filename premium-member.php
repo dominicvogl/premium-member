@@ -384,6 +384,7 @@ class PremiumMember
 			$errors = $this->handle_errors()->get_error_message();
 
 			if (empty($errors)) {
+				$this->begin_password_reset($user);
 				$this->handle_errors()->add('password_reset', __('Your password has been reset. Please check your mails', 'raidboxes_premium_member'));
 			}
 		}
