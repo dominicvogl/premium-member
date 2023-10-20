@@ -62,6 +62,9 @@ class PremiumMember
 		add_action('init', array($this, 'add_new_user'), 20);
 		add_action('init', array($this, 'verify_account'), 21);
 		add_action('init', array($this, 'handle_password_reset'), 22);
+		add_action('init', array($this, 'handle_custom_login'));
+		// Add authentication error handling
+//		add_action('wp_authenticate', array($this, 'handle_authentication_errors'), 10, 2);
 	}
 
 	public function create_shortcodes()
@@ -69,31 +72,13 @@ class PremiumMember
 		add_shortcode('user_register_form', array($this, 'registration_form'));
 		add_shortcode('user_detail_page', array($this, 'user_detail_page'));
 		add_shortcode('user_password_reset', array($this, 'user_password_reset'));
+		add_shortcode('user_login_form', array($this, 'user_login_form'));
 	}
 
 	public function add_plugin_scripts()
 	{
 		add_action('wp_enqueue_scripts', array($this, 'plugin_stylesheets'));
 	}
-
-	public function register_messages()
-	{
-
-		// if there are errors, loop through them
-		if ($codes = $this->handle_errors()->get_error_codes()) {
-			echo '<div class="form_errors">';
-			foreach ($codes as $code) {
-				$message = $this->handle_errors()->get_error_message($code);
-				if ($code = 'password_reset') {
-					echo '<div class="alert alert-success" role="alert">' . __('Success: ') . $message . '</div>';
-				} else {
-					echo '<div class="alert alert-danger" role="alert">' . __('Error: ') . $message . '</div>';
-				}
-			}
-			echo '</div>';
-		}
-	}
-
 
 	public function plugin_stylesheets()
 	{
@@ -102,6 +87,16 @@ class PremiumMember
 
 		// Enqueue bootstrap style
 		wp_enqueue_style('plugin-bootstrap-style', $bootstrap_css_url);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function add_user_role(): void
+	{
+		add_role('raidboxes_premium_member', 'Raidboxes Premium Member', [
+			'read' => true,
+		]);
 	}
 
 
@@ -113,7 +108,7 @@ class PremiumMember
 	{
 
 		// default message when you are logged in
-		$output = __('You are still logged in', 'raidboxes_premium_member');
+		$output = '<div class="alert alert-info" role="alert">'.__('You are still logged in', 'raidboxes_premium_member').'</div>';
 
 		// if user is not logged in, display the form
 		if (!is_user_logged_in()) {
@@ -294,25 +289,90 @@ class PremiumMember
 	}
 
 
+	public function user_login_form() {
+		// Start output buffering
+		ob_start();
 
-	/**
-	 * @return mixed|WP_Error
-	 */
-	public function handle_errors()
-	{
-		static $wp_error;
-		return $wp_error ?? ($wp_error = new WP_Error(null, null, null));
+		$this->messageRegister->register_messages();
+
+		// Your HTML form here
+		?>
+		<form method="post" action="">
+			<input type="hidden" name="premium_custom_login" value="1">
+			<div class="form-group mb-3">
+				<label for="user_login">Username</label>
+				<input type="text" name="user_login" id="user_login" class="form-control" value="">
+			</div>
+			<div class="form-group mb-3">
+				<label for="user_password">Password</label>
+				<input type="password" name="user_password" id="user_password" class="form-control" value="">
+			</div>
+			<div class="form-group">
+				<button type="submit" class="btn btn-primary"><?php _e('Login', 'raidboxes_premium_member'); ?></button>
+			</div>
+		</form>
+		<?php
+
+		// Get the buffered content and end buffering
+		$output = ob_get_clean();
+
+		return $output;
 	}
 
-	/**
-	 * @return void
-	 */
-	public function add_user_role(): void
-	{
-		add_role('raidboxes_premium_member', 'Raidboxes Premium Member', [
-			'read' => true,
-		]);
+	public function handle_authentication_errors($username, $password) {
+		// Initialize messageRegister object
+
+		$login_data = array(
+			'user_login' => sanitize_user($username),
+			'user_password' => sanitize_text_field($password),
+		);
+
+		if(empty($login_data['user_login']) || empty($login_data['user_password'])) {
+			$this->messageRegister->handle_errors()->add('empty_fields', __('Username and password are required.', 'raidboxes_premium_member'));
+			return;
+		}
+
+		$user = get_user_by('login', $login_data['user_login']);
+		if (!$user) {
+			return;
+		}
+
+		if (!wp_check_password($login_data['user_password'], $user->data->user_pass, $user->ID)) {
+			$this->messageRegister->handle_errors()->add('wrong_password', __('Incorrect Password', 'raidboxes_premium_member'));
+			return;
+		}
 	}
+
+	public function handle_custom_login() {
+
+		// check if we are in the login form
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['premium_custom_login'])) {
+
+			// check hot to sanitize the fields
+			$user_login = sanitize_user($_POST['user_login']);
+
+			// is is mail, for login, sanitize it as email
+			if(is_email($_POST['user_login'])) {
+				$user_login = sanitize_email($_POST['user_login']);
+			}
+
+			$user = wp_signon(array(
+				'user_login'    => $user_login,
+				'user_password' => sanitize_text_field($_POST['user_password']),
+				'remember'      => true
+			));
+
+			// check if there is any error with the login
+			if(is_wp_error($user)) {
+				$this->messageRegister->handle_errors()->add('login_failed', $user->get_error_message());
+			} else {
+				// Redirect user to a specified URL or home page
+				wp_redirect(empty($redirect) ? home_url() : $redirect);
+				exit;
+			}
+		}
+	}
+
 
 	public function user_detail_page()
 	{
