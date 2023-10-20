@@ -271,7 +271,12 @@ class PremiumMember
 			echo '<div class="form_errors">';
 			foreach($codes as $code) {
 				$message = $this->handle_errors()->get_error_message($code);
-				echo '<div class="alert alert-danger" role="alert">' . __('Error: ') . $message . '</div>';
+				if($code = 'password_reset') {
+					echo '<div class="alert alert-success" role="alert">' . __('Success: ') . $message . '</div>';
+				}
+				else {
+					echo '<div class="alert alert-danger" role="alert">' . __('Error: ') . $message . '</div>';
+				}
 			}
 			echo '</div>';
 		}
@@ -347,6 +352,9 @@ class PremiumMember
 	public function user_password_reset()
 	{
 		ob_start();
+
+		$this->register_messages();
+
 		?>
 		<form id="password-reset-form" method="POST">
 			<div class="form-group mb-4">
@@ -369,14 +377,14 @@ class PremiumMember
 			$user_email = sanitize_email($_POST['user_email']);
 			$user = get_user_by('email', $user_email);
 
-			// Check if user exists
-			if($user){
-				$this->begin_password_reset($user);
+			if(!$user) {
+				$this->handle_errors()->add('email_not_found', __('No user with that email address exists.', 'raidboxes_premium_member'));
 			}
-			else {
-				// User does not exist, handle this case here
-				echo "This user does not exist!";
-				exit;
+
+			$errors = $this->handle_errors()->get_error_message();
+
+			if (empty($errors)) {
+				$this->handle_errors()->add('password_reset', __('Your password has been reset. Please check your mails', 'raidboxes_premium_member'));
 			}
 		}
     }
