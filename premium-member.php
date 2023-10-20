@@ -21,15 +21,36 @@ if (!defined('ABSPATH')) {
 class PremiumMember
 {
 
-    public function __construct()
-    {
+	public function __construct()
+	{
+		// add roles
+		$this->add_roles();
+		// handle the user registration process
+		$this->handle_user_registration();
+		// add plugin scripts and styles
+		$this->add_plugin_scripts();
+		// generate form shortcodes
+		$this->create_shortcodes();
+	}
 
-		// add ne capability
-		add_action('init', array($this, 'add_user_role'));
-		// add script for user registration
-		add_action('init', array($this, 'add_new_user'));
+	public function add_roles()
+	{
+		add_action('init', array($this, 'add_user_role'), 10);
+	}
+
+	public function add_plugin_scripts()
+	{
 		add_action('wp_enqueue_scripts', array($this, 'plugin_stylesheets'));
+	}
 
+	public function handle_user_registration()
+	{
+		add_action('init', array($this, 'add_new_user'), 20);
+		add_action('init', array($this, 'verify_account'), 21);
+	}
+
+	public function create_shortcodes()
+	{
 		add_shortcode('user_register_form', array($this, 'registration_form'));
     }
 
