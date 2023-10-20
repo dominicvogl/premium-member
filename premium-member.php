@@ -15,14 +15,22 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+// Include the MessageRegister class.
+require_once plugin_dir_path( __FILE__ ) . 'MessageRegister.php';
+
 /**
  * Premium Member Plugin Class
  */
 class PremiumMember
 {
 
+	private $messageRegister;
+
 	public function __construct()
 	{
+
+		$this->messageRegister = new MessageRegister();
+
 		// add roles
 		$this->add_roles();
 		// handle the user registration process
@@ -126,7 +134,7 @@ class PremiumMember
 	{
 		ob_start();
 
-		$this->register_messages();
+		$this->messageRegister->register_messages();
 
 		?>
 
@@ -174,31 +182,31 @@ class PremiumMember
 
 			// if username already exists, give message
 			if (username_exists($user_data['user_login'])) {
-				$this->handle_errors()->add('username_unavailable', __('Username already taken', 'raidboxes_premium_member'));
+				$this->messageRegister->handle_errors()->add('username_unavailable', __('Username already taken', 'raidboxes_premium_member'));
 			}
 
 			// if username is invalid, give message
 			if (!validate_username($user_data['user_login'])) {
-				$this->handle_errors()->add('username_invalid', __('Invalid username', 'raidboxes_premium_member'));
+				$this->messageRegister->handle_errors()->add('username_invalid', __('Invalid username', 'raidboxes_premium_member'));
 			}
 
 			// if username is empty, give message
 			if ($user_data['user_login'] == '') {
-				$this->handle_errors()->add('username_empty', __('Please enter a username', 'raidboxes_premium_member'));
+				$this->messageRegister->handle_errors()->add('username_empty', __('Please enter a username', 'raidboxes_premium_member'));
 			}
 
 			// if email is invalid, give message
 			if (!is_email($user_data['user_email'])) {
-				$this->handle_errors()->add('email_invalid', __('Invalid email', 'raidboxes_premium_member'));
+				$this->messageRegister->handle_errors()->add('email_invalid', __('Invalid email', 'raidboxes_premium_member'));
 			}
 
 			// if email is empty, give message
 			if (email_exists($user_data['user_email'])) {
-				$this->handle_errors()->add('email_used', __('Email already used', 'raidboxes_premium_member'));
+				$this->messageRegister->handle_errors()->add('email_used', __('Email already used', 'raidboxes_premium_member'));
 			}
 
 			// get all error messages
-			$errors = $this->handle_errors()->get_error_message();
+			$errors = $this->messageRegister->handle_errors()->get_error_message();
 
 			// if no errors then send verification mail
 			if (empty($errors)) {
@@ -365,7 +373,7 @@ class PremiumMember
 	{
 		ob_start();
 
-		$this->register_messages();
+		$this->messageRegister->register_messages();
 
 		?>
 		<form id="password-reset-form" method="POST">
@@ -390,14 +398,14 @@ class PremiumMember
 			$user = get_user_by('email', $user_email);
 
 			if (!$user) {
-				$this->handle_errors()->add('email_not_found', __('No user with that email address exists.', 'raidboxes_premium_member'));
+				$this->messageRegister->handle_errors()->add('email_not_found', __('No user with that email address exists.', 'raidboxes_premium_member'));
 			}
 
-			$errors = $this->handle_errors()->get_error_message();
+			$errors = $this->messageRegister->handle_errors()->get_error_message();
 
 			if (empty($errors)) {
 				$this->begin_password_reset($user);
-				$this->handle_errors()->add('password_reset', __('Your password has been reset. Please check your mails', 'raidboxes_premium_member'));
+				$this->messageRegister->handle_errors()->add('password_reset', __('Your password has been reset. Please check your mails', 'raidboxes_premium_member'));
 			}
 		}
 	}
