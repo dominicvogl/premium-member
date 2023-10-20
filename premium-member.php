@@ -47,12 +47,14 @@ class PremiumMember
 	{
 		add_action('init', array($this, 'add_new_user'), 20);
 		add_action('init', array($this, 'verify_account'), 21);
+		add_action('init', array($this, 'handle_password_reset'), 22);
 	}
 
 	public function create_shortcodes()
 	{
 		add_shortcode('user_register_form', array($this, 'registration_form'));
 		add_shortcode('user_detail_page', array($this, 'user_detail_page'));
+		add_shortcode('user_password_reset', array($this, 'user_password_reset'));
 	}
 
     public function install_plugin()
@@ -207,14 +209,14 @@ class PremiumMember
 		$verification_link = add_query_arg(array('action' => 'verify_account', 'key' => $verification_key), home_url());
 
 		// Erstellen Sie die E-Mail-Nachricht
-		$message = sprintf(__('Hallo %s,', 'raidboxes_premium_member'), $user_data['user_login']);
+		$message = sprintf(__('Hello %s,', 'raidboxes_premium_member'), $user_data['user_login']);
 		$message .= "\r\n\r\n";
-		$message .= __('Danke für die Registrierung auf unserer Website.', 'raidboxes_premium_member');
-		$message .= __('Bitte klicken Sie auf den folgenden Link, um Ihr Konto zu bestätigen:', 'raidboxes_premium_member');
+		$message .= __('Thank you for your website Registration.', 'raidboxes_premium_member');
+		$message .= __(' Please click on the following link to confirm your account:', 'raidboxes_premium_member');
 		$message .= "\r\n\r\n<a href='" . $verification_link . "'>" . $verification_link . "</a>\r\n";
 
 		// Senden Sie die E-Mail
-		wp_mail($user_data['user_email'], __('Bestätigen Sie Ihr Konto', 'raidboxes_premium_member'), $message);
+		wp_mail($user_data['user_email'], __('Confirm your account', 'raidboxes_premium_member'), $message);
 
 		// Reset content type to default
 		remove_filter('wp_mail_content_type', 'set_html_content_type');
@@ -291,7 +293,6 @@ class PremiumMember
     {
         add_role('raidboxes_premium_member', 'Raidboxes Premium Member', [
             'read' => true,
-            // Add additional capabilities here
         ]);
     }
 
@@ -343,10 +344,66 @@ class PremiumMember
 		return $output;
 	}
 
+	public function user_password_reset()
+	{
+		ob_start();
+		?>
+		<form id="password-reset-form" method="POST">
+			<div class="form-group mb-4">
+				<label for="user_email"><?php _e('Enter your email address: ', 'raidboxes_premium_member'); ?></label>
+				<input type="email" class="form-control" name="user_email" id="user_email" required />
+			</div>
+			<button class="btn btn-danger" type="submit" name="submit_password_reset"><?php _e('Reset password', 'raidboxes_premium_member'); ?></button>
+		</form>
+		<?php
+		$output = ob_get_clean();
+
+		return $output;
+	}
+
     public function handle_password_reset()
     {
         // Handle password reset logic here
+		if(isset($_POST['submit_password_reset']))
+		{
+			$user_email = sanitize_email($_POST['user_email']);
+			$user = get_user_by('email', $user_email);
+
+			// Check if user exists
+			if($user){
+				$this->begin_password_reset($user);
+			}
+			else {
+				// User does not exist, handle this case here
+				echo "This user does not exist!";
+				exit;
+			}
+		}
     }
+
+	public function begin_password_reset($user)
+	{
+		// Get the key
+		$key = get_password_reset_key($user);
+
+		// Create a new message
+		$message = __('Someone has requested a password reset for the following account on ', 'raidboxes_premium_member') . get_bloginfo('name') . "\r\n\r\n";
+		$message .= sprintf(__('Username: %s'), $user->user_login) . "\r\n\r\n";
+		$message .= __('If this was a mistake, just ignore this email and nothing will happen.', 'raidboxes_premium_member') . "\r\n\r\n";
+		$message .= __('To reset your password, visit the following address:', 'raidboxes_premium_member') . "\r\n\r\n";
+		$message .= '<a href="'.esc_url(network_site_url("wp-login.php?action=rp&key=$key&login=" . rawurlencode($user->user_login), 'login')).'">'.__('Click here to reset Passwort', 'raidboxes_premium_member').'</a>';
+
+		// Sending our email
+		// Make sure to set content type to HTML
+		add_filter('wp_mail_content_type', function ($content_type) {
+			return 'text/html';
+		});
+
+		wp_mail($user->user_email, __('Raidbox Password Reset'), $message);
+
+		// Reset content type
+		remove_filter('wp_mail_content_type', 'set_html_content_type');
+	}
 
 
 }
