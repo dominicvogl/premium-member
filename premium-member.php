@@ -1,12 +1,12 @@
 <?php
 
 /*
-Plugin Name: Premium Raidbox Member
-Plugin URI: https://raidbox.de
-Description: A brief description of the Plugin.
+Plugin Name: Premium Raidboxes Member
+Plugin URI: https://raidboxes.de
+Description: A Plugin to get Raidboxes Employee =).
 Version: 0.1.0-alpha
 Author: Dominic Vogl
-Author URI: http://dominicvogl.de
+Author URI: https://dominicvogl.de
 License: GPL2
 */
 
@@ -226,8 +226,11 @@ class PremiumMember
 		// generate key
 		$verification_key = wp_generate_password(20, false);
 
-		// save key in database
-		update_option('pm_' . $verification_key, $user_data, false);
+		// save key in transient cache, for 24 hours
+		set_transient('pm_'.$verification_key, $user_data, (HOUR_IN_SECONDS * 24));
+
+		// save key in database permanently
+		// update_option('pm_' . $verification_key, $user_data, false);
 
 		// generate verification link
 		$verification_link = add_query_arg(array('action' => 'verify_account', 'key' => $verification_key), home_url());
@@ -254,7 +257,8 @@ class PremiumMember
 			// sanitize the key
 			$verification_key = sanitize_text_field($_GET['key']);
 			// get the key from database
-			$user_data = get_option('pm_' . $verification_key, false);
+//			$user_data = get_option('pm_' . $verification_key, false);
+			$user_data = get_transient('pm_' . $verification_key);
 
 			// if key exists, create new user
 			if ($user_data !== false) {
@@ -488,6 +492,7 @@ class PremiumMember
 			return 'text/html';
 		});
 
+		// send the mail
 		wp_mail($user->user_email, __('Raidbox Password Reset'), $message);
 
 		// Reset content type
