@@ -52,7 +52,8 @@ class PremiumMember
 	public function create_shortcodes()
 	{
 		add_shortcode('user_register_form', array($this, 'registration_form'));
-    }
+		add_shortcode('user_detail_page', array($this, 'user_detail_page'));
+	}
 
     public function install_plugin()
     {
@@ -138,22 +139,11 @@ class PremiumMember
     public function add_new_user()
     {
 
-		echo '<pre>';
-		var_dump($_POST);
-		var_dump(isset($_POST['rpm_user_name']) && wp_verify_nonce($_POST['rpm_nonce'], 'rpm-nonce'));
-		echo '</pre>';
-
-
-
-        // check for username, and check verify wordpress nonce
+        // check for username, and check verify WordPress nonce
 		if (isset($_POST['rpm_user_name']) && wp_verify_nonce($_POST['rpm_nonce'], 'rpm-nonce')) {
             $user_data = [
                 'user_login' => sanitize_user($_POST['rpm_user_name']),
-                'user_email' => sanitize_email($_POST['rpm_user_email']),
-                'first_name' => sanitize_text_field($_POST['rpm_user_first']),
-                'last_name' => sanitize_text_field($_POST['rpm_user_last']),
-                'user_pass' => sanitize_text_field($_POST['rpm_user_pass']),
-                'user_pass_confirm' => sanitize_text_field($_POST['rpm_user_pass_confirm']),
+                'user_email' => sanitize_email($_POST['rpm_user_email'])
             ];
 
             // required for username check
@@ -184,33 +174,75 @@ class PremiumMember
                 $this->handle_errors()->add('email_used', __('Email already used', 'raidboxes_premium_member'));
             }
 
-            if (empty($user_data['user_pass'])) {
-                $this->handle_errors()->add('password_empty', __('Please enter a password', 'raidboxes_premium_member'));
-            }
-
-            // check password confirmation
-            if ($user_data['user_pass'] != $user_data['user_pass_confirm']) {
-                $this->handle_errors()->add('password_mismatch', __('Passwords do not match', 'raidboxes_premium_member'));
-            }
-
             // get all error messages
             $errors = $this->handle_errors()->get_error_message();
 
-            // if no errors then register user
+            // if no errors then send verification mail
             if (empty($errors)) {
-                $new_user_id = wp_insert_user([
-					'user_login' => $user_data['user_login'],
-					'user_pass' => $user_data['user_pass'],
-					'user_email' => $user_data['user_email'],
-					'first_name' => $user_data['first_name'],
-					'last_name' => $user_data['last_name'],
-					'user_registered' => date('Y-m-d H:i:s'),
-					'role' => 'raidboxes_premium_member',
-				]);
-                // echo 'User registered successfully';
 
+				$this->send_verification_email($user_data);
+
+				// can be done nicier, but for now it's ok
+				echo 'Ihre Registrierung war erfolgreich und wir haben Ihnen eine Bestätigung per E-Mail gesendet. Prüfen Sie Ihren Posteingang und vielleicht auch Ihren Spam-Ordner.';
+				exit;
+            }
+        }
+    }
+
+	public function send_verification_email($user_data)
+	{
+
+		// Set content type to HTML
+		add_filter('wp_mail_content_type', function ($content_type) {
+			return 'text/html';
+		});
+
+		// generate key
+		$verification_key = wp_generate_password(20, false);
+
+		// save key in database
+		update_option('pm_' . $verification_key, $user_data, false);
+
+		// generate verification link
+		$verification_link = add_query_arg(array('action' => 'verify_account', 'key' => $verification_key), home_url());
+
+		// Erstellen Sie die E-Mail-Nachricht
+		$message = sprintf(__('Hallo %s,', 'raidboxes_premium_member'), $user_data['user_login']);
+		$message .= "\r\n\r\n";
+		$message .= __('Danke für die Registrierung auf unserer Website.', 'raidboxes_premium_member');
+		$message .= __('Bitte klicken Sie auf den folgenden Link, um Ihr Konto zu bestätigen:', 'raidboxes_premium_member');
+		$message .= "\r\n\r\n<a href='" . $verification_link . "'>" . $verification_link . "</a>\r\n";
+
+		// Senden Sie die E-Mail
+		wp_mail($user_data['user_email'], __('Bestätigen Sie Ihr Konto', 'raidboxes_premium_member'), $message);
+
+		// Reset content type to default
+		remove_filter('wp_mail_content_type', 'set_html_content_type');
+
+		return;
+	}
+
+	public function verify_account()
+	{
+		if (isset($_GET['action']) && $_GET['action'] == 'verify_account' && isset($_GET['key'])) {
+			// sanitize the key
+			$verification_key = sanitize_text_field($_GET['key']);
+			// get the key from database
+			$user_data = get_option('pm_' . $verification_key, false);
+
+			// if key exists, create new user
+			if ($user_data !== false) {
+
+				$new_user_id = wp_insert_user([
+					'user_login' => $user_data['user_login'],
+					'user_email' => $user_data['user_email'],
+					'user_registered' => date('Y-m-d H:i:s'),
+					'role' => 'raidboxes_premium_member',	// Alle Benutzer erhalten zunächst die Standardrolle
+				]);
+
+				// check if new user was created
 				if($new_user_id) {
-					// send mail to admin
+					// if new user was created, send mail to admin
 					wp_new_user_notification($new_user_id, null, 'both');
 
 					// set cookie for new users login
@@ -220,15 +252,23 @@ class PremiumMember
 					wp_set_current_user($new_user_id, $user_data['user_login']);
 					do_action('wp_login', $user_data['user_login']);
 
-					// redirect new user to homepage
-					wp_redirect(home_url());
-					exit;
+					// redirect new user to user detail page
+					wp_redirect(home_url() . '/user-detail-page/');
 				}
-            }
-        }
-    }
+
+				if (!is_wp_error($new_user_id)) {
+					// Benutzer erfolgreich erstellt, entfernen Sie die Option
+					delete_option('pm_' . $verification_key);
+					// An dieser Stelle würden Sie den Benutzer wahrscheinlich zu einer "Erfolg"-Seite umleiten
+					wp_redirect(home_url());
+				}
+			}
+		}
+	}
 
 	public function register_messages() {
+
+		// if there are errors, loop through them
 		if($codes = $this->handle_errors()->get_error_codes()) {
 			echo '<div class="form_errors">';
 			foreach($codes as $code) {
@@ -239,13 +279,19 @@ class PremiumMember
 		}
 	}
 
-    public function handle_errors()
+	/**
+	 * @return mixed|WP_Error
+	 */
+	public function handle_errors()
     {
 		static $wp_error;
 		return $wp_error ?? ($wp_error = new WP_Error(null, null, null));
     }
 
-    public function add_user_role(): void
+	/**
+	 * @return void
+	 */
+	public function add_user_role(): void
     {
         add_role('raidboxes_premium_member', 'Raidboxes Premium Member', [
             'read' => true,
@@ -253,20 +299,30 @@ class PremiumMember
         ]);
     }
 
-    public function render_login_form()
-    {
-        // Generate and display login form HTML here
-    }
+	public function user_detail_page()
+	{
+		// Check if user is logged in
+		if(is_user_logged_in()) {
+			$current_user = wp_get_current_user();
 
-    public function handle_user_registration()
-    {
-        // Handle registration logic here
-    }
+			ob_start();
+			?>
 
-    public function handle_user_login()
-    {
-        // Handle registration logic here
-    }
+			<h2><?php echo __('User Details', 'raidboxes_premium_member'); ?></h2>
+			<p><strong><?php echo __('Username:', 'raidboxes_premium_member'); ?></strong> <?php echo $current_user->user_login; ?></p>
+			<p><strong><?php echo __('Email:', 'raidboxes_premium_member'); ?></strong> <?php echo $current_user->user_email; ?></p>
+
+			<?php
+			$output = ob_get_clean();
+		}
+		else {
+			$output = '<div class="">';
+			$output = __('You are not logged in.', 'raidboxes_premium_member');
+			$output = '</div>';
+		}
+
+		return $output;
+	}
 
     public function handle_password_reset()
     {
