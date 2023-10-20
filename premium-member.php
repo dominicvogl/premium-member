@@ -306,19 +306,41 @@ class PremiumMember
 			$current_user = wp_get_current_user();
 
 			ob_start();
+
+			// not the niciest HTML Markup, but it works for now ;-)
 			?>
 
-			<h2><?php echo __('User Details', 'raidboxes_premium_member'); ?></h2>
-			<p><strong><?php echo __('Username:', 'raidboxes_premium_member'); ?></strong> <?php echo $current_user->user_login; ?></p>
-			<p><strong><?php echo __('Email:', 'raidboxes_premium_member'); ?></strong> <?php echo $current_user->user_email; ?></p>
+			<h2><?php _e('Your User Details', 'raidboxes_premium_member'); ?></h2>
+
+			<table class="table">
+				<tr>
+					<td><label for="user_login"><?php _e('User Name / User Login:', 'raidboxes_premium_member'); ?></label></td>
+					<td>
+						<input type="text" id="user_login" class="form-control" readonly value="<?php echo esc_attr__($current_user->user_login); ?>" aria-describedby="helpBlock">
+					</td>
+				</tr>
+				<tr>
+					<td><label for="user_email"><?php _e('Email:', 'raidboxes_premium_member'); ?></label></td>
+					<td>
+						<input type="text" id="user_email" class="form-control" readonly value="<?php echo esc_attr__($current_user->user_email); ?>" aria-describedby="helpBlock">
+					</td>
+				</tr>
+				<tr>
+					<td><label for="user_pass"><?php _e('Password:', 'raidboxes_premium_member'); ?></label></td>
+					<td>
+						<input type="text" id="user_pass" class="form-control" readonly value="<?php echo esc_attr__($current_user->user_pass); ?>" aria-describedby="helpBlock">
+					</td>
+				</tr>
+			</table>
+
 
 			<?php
 			$output = ob_get_clean();
 		}
 		else {
-			$output = '<div class="">';
-			$output = __('You are not logged in.', 'raidboxes_premium_member');
-			$output = '</div>';
+			$output = '<div class="alert alert-info" role="alert">';
+			$output .= __('You are not logged in.', 'raidboxes_premium_member');
+			$output .= '</div>';
 		}
 
 		return $output;
