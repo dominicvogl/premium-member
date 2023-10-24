@@ -27,8 +27,16 @@ class PremiumMember
 
 	private $messageRegister;
 
+	public $plugin_path;
+
+	private $plugin_textdomain;
+
 	public function __construct()
 	{
+
+		$this->plugin_path = plugin_dir_path( __FILE__);
+
+		$this->plugin_textdomain = 'raidboxes_premium_member';
 
 		$this->messageRegister = new MessageRegister();
 
@@ -40,6 +48,9 @@ class PremiumMember
 		$this->add_plugin_scripts();
 		// generate form shortcodes
 		$this->create_shortcodes();
+		// load textdomain for the plugin
+		$this->load_plugin_textdomain();
+
 	}
 
 	public function install_plugin()
@@ -232,8 +243,16 @@ class PremiumMember
 		// generate key
 		$verification_key = wp_generate_password(20, false);
 
+		// set default transient time for login expiration link
+		$transient_time = (HOUR_IN_SECONDS * 24);
+
+		// overwrite transient time if set in settings is defined
+		if(!empty(get_option('link_expiration_time')) && is_numeric(intval(get_option('link_expiration_time')))) {
+			$transient_time = (HOUR_IN_SECONDS * get_option('link_expiration_time'));
+		}
+
 		// save key in transient cache, for 24 hours
-		set_transient('pm_'.$verification_key, $user_data, (HOUR_IN_SECONDS * 24));
+		set_transient('pm_'.$verification_key, $user_data, $transient_time);
 
 		// save key in database permanently
 		// update_option('pm_' . $verification_key, $user_data, false);
@@ -303,6 +322,7 @@ class PremiumMember
 		// Start output buffering
 		ob_start();
 
+		// get error messages
 		$this->messageRegister->register_messages();
 
 		// check if login is active
@@ -310,7 +330,7 @@ class PremiumMember
 			echo '<div class="alert alert-danger" role="alert">'.__('Login is currently not possible. Please come later again.', 'raidboxes_premium_member').'</div>';
 		}
 
-		// Your HTML form here
+		// HTML Form here
 		?>
 		<form method="post" action="">
 			<input type="hidden" name="premium_custom_login" value="1">
@@ -510,6 +530,46 @@ class PremiumMember
 		remove_filter('wp_mail_content_type', 'set_html_content_type');
 	}
 
+	/**
+	 * Load textdomain of the plugin for makint it translateable
+	 */
+
+	/**
+	 * Load textdomain of the plugin for makint it translateable
+	 */
+
+	public function load_plugin_textdomain()
+	{
+		// vars
+		$domain = $this->plugin_textdomain;
+
+		var_dump($this->plugin_textdomain);
+		var_dump($this->get_locale());
+
+		$locale = apply_filters('plugin_locale', $this->get_locale(), $domain);
+		$mofile = $domain . '-' . $locale . '.mo';
+
+		// load from the languages directory first
+		load_textdomain($domain, WP_LANG_DIR . '/plugins/' . $mofile);
+
+		// redirect missing translations
+		$mofile = str_replace('en_EN', 'en_EN', $mofile);
+
+		var_dump($this->get_path('language/' . $mofile));
+
+		// load from plugin lang folder
+		load_textdomain($domain, $this->get_path('language/' . $mofile));
+	}
+
+	public function get_locale(): string
+	{
+		return is_admin() && function_exists('get_user_locale') ? get_user_locale() : get_locale();
+	}
+
+	public function get_path($path = ''): string
+	{
+		return $this->plugin_path . $path;
+	}
 
 }
 
