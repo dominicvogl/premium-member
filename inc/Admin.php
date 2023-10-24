@@ -36,6 +36,9 @@ class PremiumMemberAdminSettings {
 		</div> <?php
 	}
 
+	/**
+	 * Set up the sections for the plugin settings page.
+	 */
 	public function setup_sections() {
 		add_settings_section(
 			'checkbox_section', // id
@@ -87,35 +90,31 @@ class PremiumMemberAdminSettings {
 
 			register_setting(
 				'raidboxes_premium_member_plugin_settings',
-				$settingField['id'],
-				[
-					'sanitize_callback' => [$this, 'serialize_data']
-				]
+				'raidboxes_premium_member_plugin_settings'
 			);
 
 		}
 	}
 
-	public function serialize_data($input): string {
-		return serialize($input);
+	public function serialize_data($input) {
+		return $input;
 	}
 
 	public function checkbox_callback( $args ) {
-		// Get the value of the setting we've registered with register_setting()
-		$value = unserialize(get_option( $args['id'] ));
+		$options = get_option('raidboxes_premium_member_plugin_settings');
+		$value = $options[$args['id']] ?? false;
 
-		// Creating the checkbox field
 		echo '<div class="form-check">';
-		echo '<input name="' . $args['id'] . '" id="' . $args['id'] . '" type="checkbox" value="1" class="form-check-input" ' . checked( 1, $value, false ) . ' /> ';
+		echo '<input name="raidboxes_premium_member_plugin_settings[' . $args['id'] . ']" id="' . $args['id'] . '" type="checkbox" value="1" class="form-check-input" ' . checked( 1, $value, false ) . ' /> ';
 		echo '<label for="' . $args['id'] . '" class="form-check-label"> ' . $args['desc'] . '</label> ';
 		echo '</div>';
 	}
 
 	public function number_callback( $args ) {
-		// Get the value of the setting we've registered with register_setting()
-		$value = unserialize(get_option( $args['id'] ));
-		// Creating the number field
-		echo '<input type="number" name="' . $args['id'] . '" id="' . $args['id'] . '" value="'. esc_attr($value) .'" /> ' . $args['desc'];
+		$options = get_option('raidboxes_premium_member_plugin_settings');
+		$value = $options[$args['id']] ?? '';
+
+		echo '<input type="number" name="raidboxes_premium_member_plugin_settings[' . $args['id'] . ']" id="' . $args['id'] . '" value="'. esc_attr($value) .'" /> ' . $args['desc'];
 	}
 
 }

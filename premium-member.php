@@ -67,51 +67,55 @@ class PremiumMember
 		// Write a message to the PHP error log
 		error_log("The plugin_uninstall function was called.");
 
-		$is_deletion_active = unserialize(get_option('delete_plugin_data'));
+		$options = get_option('raidboxes_premium_member_plugin_settings');
 
-		error_log($is_deletion_active);
-
-		if( $is_deletion_active === '1') {
-
-			global $wpdb;
-
-			error_log("Deletion is active");
-
-			$users = get_users(array('role' => 'rpm_role'));
-
-			foreach ($users as $user) {
-				wp_delete_user($user->ID);
-				error_log("Deleted user with ID: {$user->ID}");
-			}
-
-			// remove the role
-			remove_role('rpm_role');
-
-			// Get all transients that start with 'pm_'
-			$transients = $wpdb->get_col("SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_pm_%' OR option_name LIKE '_transient_timeout_pm_%';");
-			foreach($transients as $transient) {
-				// Strip away the WordPress prefix in order to use WordPress functions
-				$transient = str_replace('_transient_timeout_', '', $transient);
-				$transient = str_replace('_transient_', '', $transient);
-				delete_transient($transient);
-			}
-
-			error_log("Deleted all options, roles, users with role 'rpm_role', and transients starting with 'pm_'");
-
-			// remove the options from the admin page options
-			// can be improved to load the field names from the Admin Class, but for now it's ok to prevent missing something
-			$options_to_delete = ['delete_plugin_data', 'registration_active', 'login_active', 'link_expiration_time'];
-
-			foreach($options_to_delete as $option) {
-				delete_option($option);
-			}
-
-
-
-
-			error_log("Deleted all options and roles");
-			flush_rewrite_rules();
+		if( $options['delete_plugin_data'] === '1') {
+			$this->remove_all_data();
 		}
+	}
+
+	public function remove_all_data() {
+
+		// make WordPress DB functions available
+		global $wpdb;
+
+		error_log("Deletion is active");
+
+		// get all users with the plugin role
+		$users = get_users(array('role' => 'rpm_role'));
+
+		// loop and delete them
+		foreach ($users as $user) {
+			wp_delete_user($user->ID);
+			error_log("Deleted user with ID: {$user->ID}");
+		}
+
+		// remove the role
+		remove_role('rpm_role');
+
+		// Get all varification keys that are stored in the database while deactivating the plugin
+		$transients = $wpdb->get_col("SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_pm_%' OR option_name LIKE '_transient_timeout_pm_%';");
+		foreach($transients as $transient) {
+			// Strip away the WordPress prefix in order to use WordPress functions
+			$transient = str_replace('_transient_timeout_', '', $transient);
+			$transient = str_replace('_transient_', '', $transient);
+			delete_transient($transient);
+		}
+
+
+		// remove the options from the admin page options
+		// can be improved to load the field names from the Admin Class, but for now it's ok to prevent missing something
+		$options_to_delete = ['raidboxes_premium_member_plugin_settings'];
+
+		foreach($options_to_delete as $option) {
+			delete_option($option);
+		}
+
+		error_log("Deleted all options, roles, users with role 'rpm_role', and transients starting with 'pm_'");
+
+		// this may prevent problems with the rewrite rules
+		flush_rewrite_rules();
+
 	}
 
 
@@ -179,11 +183,15 @@ class PremiumMember
 		if (!is_user_logged_in()) {
 
 			// check for options in settings, if user are allowed to register
-			if (get_option('users_can_register')) {
+
+			$options = get_option('raidboxes_premium_member_plugin_settings');
+
+			if (!empty($options['registration_active'])) {
 				$output = $this->registration_form_fields();
-			} // if not, display a message
+			}
+			// if not, display a message
 			else {
-				$output = __('User registration is not possible at the moment', 'raidboxes_premium_member');
+				$output = '<div class="alert alert-warning" role="alert">'.__('Registration is currently not possible. Come please later again.', 'raidboxes_premium_member').'</div>';
 			}
 		}
 
@@ -196,14 +204,6 @@ class PremiumMember
 
 		$this->messageRegister->register_messages();
 
-		// check if registration is active (via Admin in the Backend)
-
-		$registration_active_state = unserialize(get_option('registration_active'));
-
-		if(!$registration_active_state)  {
-			echo '<div class="alert alert-warning" role="alert">'.__('Registration is currently not possible. Come please later again.', 'raidboxes_premium_member').'</div>';
-			return ob_get_clean();
-		}
 		?>
 
 		<form id="rpm_user_registration_form" class="user_registration" action="" method="POST">
@@ -302,10 +302,12 @@ class PremiumMember
 		// set default transient time for login expiration link
 		$transient_time = (HOUR_IN_SECONDS * 24);
 
-		$link_expiration_time = intval(unserialize(get_option('link_expiration_time')));
+		$options = get_option('raidboxes_premium_member_plugin_settings');
+
+		$link_expiration_time = intval($options['link_expiration_time']);
 
 		// overwrite transient time if set in settings is defined
-		if(!empty(get_option('link_expiration_time'))) {
+		if(!empty($link_expiration_time)) {
 			$transient_time = (HOUR_IN_SECONDS * $link_expiration_time);
 		}
 
@@ -340,7 +342,6 @@ class PremiumMember
 			// sanitize the key
 			$verification_key = sanitize_text_field($_GET['key']);
 			// get the key from database
-//			$user_data = get_option('pm_' . $verification_key, false);
 			$user_data = get_transient('pm_' . $verification_key);
 
 			// if key exists, create new user
@@ -383,10 +384,10 @@ class PremiumMember
 		// get error messages
 		$this->messageRegister->register_messages();
 
-		$login_active_state = unserialize(get_option('login_active'));
+		$options = get_option('raidboxes_premium_member_plugin_settings');
 
 		// check if login is active
-		if(!$login_active_state) {
+		if(empty($options['login_active'])) {
 			echo '<div class="alert alert-danger" role="alert">'.__('Login is currently not possible. Please come later again.', 'raidboxes_premium_member').'</div>';
 		}
 
@@ -403,7 +404,7 @@ class PremiumMember
 				<input type="password" name="user_password" id="user_password" class="form-control" value="">
 			</div>
 			<div class="form-group">
-				<button type="submit" class="btn btn-primary" <?php echo ($login_active_state) ? '' : 'disabled'; ?>><?php _e('Login', 'raidboxes_premium_member'); ?></button>
+				<button type="submit" class="btn btn-primary" <?php echo (!empty($options['login_active'])) ? '' : 'disabled'; ?>><?php _e('Login', 'raidboxes_premium_member'); ?></button>
 			</div>
 		</form>
 		<?php
