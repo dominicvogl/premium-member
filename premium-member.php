@@ -132,6 +132,12 @@ class PremiumMember
 
 		$this->messageRegister->register_messages();
 
+		// check if registration is active (via Admin in the Backend)
+		if(!get_option('registration_active'))  {
+			echo '<div class="alert alert-warning" role="alert">'.__('Registration is currently not possible. Come please later again.', 'raidboxes_premium_member').'</div>';
+			return ob_get_clean();
+		}
+
 		?>
 
 		<form id="rpm_user_registration_form" class="user_registration" action="" method="POST">
@@ -154,7 +160,7 @@ class PremiumMember
 
 				<input type="hidden" name="rpm_nonce" value="<?php echo wp_create_nonce('rpm-nonce'); ?>"/>
 
-				<button type="submit" class="btn btn-lg btn-success">Submit</button>
+				<button type="submit" class="btn btn-success"><?php _e('Register now', 'raidboxes_premium_member'); ?></button>
 
 			</fieldset>
 		</form>
