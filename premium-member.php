@@ -249,11 +249,11 @@ class PremiumMember
 		// set default transient time for login expiration link
 		$transient_time = (HOUR_IN_SECONDS * 24);
 
-		$link_expiration_time = unserialize(get_option('link_expiration_time'));
+		$link_expiration_time = intval(unserialize(get_option('link_expiration_time')));
 
 		// overwrite transient time if set in settings is defined
-		if(!empty(get_option('link_expiration_time')) && is_numeric(intval(get_option('link_expiration_time')))) {
-			$transient_time = (HOUR_IN_SECONDS * get_option('link_expiration_time'));
+		if(!empty(get_option('link_expiration_time'))) {
+			$transient_time = (HOUR_IN_SECONDS * $link_expiration_time);
 		}
 
 		// save key in transient cache, for 24 hours
@@ -297,7 +297,7 @@ class PremiumMember
 					'user_login' => $user_data['user_login'],
 					'user_email' => $user_data['user_email'],
 					'user_registered' => date('Y-m-d H:i:s'),
-					'role' => 'raidboxes_premium_member',    // Alle Benutzer erhalten zunächst die Standardrolle
+					'role' => 'rpm_role',    // Alle Benutzer erhalten zunächst die Standardrolle
 				]);
 
 				// check if new user was created
