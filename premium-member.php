@@ -137,7 +137,6 @@ class PremiumMember
 			echo '<div class="alert alert-warning" role="alert">'.__('Registration is currently not possible. Come please later again.', 'raidboxes_premium_member').'</div>';
 			return ob_get_clean();
 		}
-
 		?>
 
 		<form id="rpm_user_registration_form" class="user_registration" action="" method="POST">
@@ -306,6 +305,11 @@ class PremiumMember
 
 		$this->messageRegister->register_messages();
 
+		// check if login is active
+		if(!get_option('login_active')) {
+			echo '<div class="alert alert-danger" role="alert">'.__('Login is currently not possible. Please come later again.', 'raidboxes_premium_member').'</div>';
+		}
+
 		// Your HTML form here
 		?>
 		<form method="post" action="">
@@ -319,7 +323,7 @@ class PremiumMember
 				<input type="password" name="user_password" id="user_password" class="form-control" value="">
 			</div>
 			<div class="form-group">
-				<button type="submit" class="btn btn-primary"><?php _e('Login', 'raidboxes_premium_member'); ?></button>
+				<button type="submit" class="btn btn-primary" <?php echo (get_option('login_active')) ? '' : 'disabled'; ?>><?php _e('Login', 'raidboxes_premium_member'); ?></button>
 			</div>
 		</form>
 		<?php
