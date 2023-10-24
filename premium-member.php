@@ -15,10 +15,10 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-require_once 'vendor/autoload.php';
-
+//require_once 'vendor/autoload.php';
+//
 use inc\MessageRegister;
-use PHPUnit\Framework\TestCase;
+//use PHPUnit\Framework\TestCase;
 
 // Include the MessageRegister class.
 require_once plugin_dir_path( __FILE__ ) . 'inc/MessageRegister.php';
@@ -38,7 +38,7 @@ function deactivate_rpm()
 /**
  * Premium Member Plugin Class
  */
-class PremiumMember extends TestCase
+class PremiumMember
 {
 
 	private MessageRegister $messageRegister;
