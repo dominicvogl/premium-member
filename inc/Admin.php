@@ -62,7 +62,13 @@ class PremiumMemberAdminSettings {
 				"title" => __('User Registration Link expiration time', 'raidboxes_premium_member'),
 				"description" => "Overwrite the time how long the login link is valid? (in hours). Default are 24 hours.",
 				"callback" => "number_callback",
-			]
+			],
+			[
+				"id" => "delete_plugin_data",
+				"title" => __('Data handling', 'raidboxes_premium_member'),
+				"description" => "When deactivating the plugin, should all plugin data be cleared?",
+				"callback" => "checkbox_callback",
+			],
 		];
 
 		foreach($settingfields as $settingField) {
