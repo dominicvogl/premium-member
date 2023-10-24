@@ -15,6 +15,10 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+require_once 'vendor/autoload.php';
+
+use \PHPUnit\Framework\TestCase;
+
 // Include the MessageRegister class.
 require_once plugin_dir_path( __FILE__ ) . 'MessageRegister.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/Admin.php';
@@ -33,7 +37,7 @@ function deactivate_rpm()
 /**
  * Premium Member Plugin Class
  */
-class PremiumMember
+class PremiumMember extends TestCase
 {
 
 	private $messageRegister;
@@ -61,6 +65,40 @@ class PremiumMember
 		$this->create_shortcodes();
 		// load textdomain for the plugin
 		$this->load_plugin_textdomain();
+	}
+
+	// An example for user registration
+	public function test_user_registration()
+	{
+		$PremiumMember = new PremiumMember();
+
+		$_POST = [
+			'rpm_user_name' => 'test_username',
+			'rpm_user_email' => 'test@example.com'
+		];
+
+		$PremiumMember->add_new_user();
+
+		$errors = $PremiumMember->messageRegister->handle_errors()->get_error_message();
+
+		$this->assertEquals(0, count($errors));
+	}
+
+	// An example for user login
+	public function test_user_login()
+	{
+		$PremiumMember = new PremiumMember();
+
+		$_POST = [
+			'user_login' => 'test_username',
+			'user_password' => 'test_password'
+		];
+
+		$PremiumMember->handle_custom_login();
+
+		$errors = $PremiumMember->messageRegister->handle_errors()->get_error_message();
+
+		$this->assertEquals(0, count($errors));
 	}
 
 	public function plugin_deactivate() {
