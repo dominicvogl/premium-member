@@ -79,14 +79,25 @@ class PremiumMemberAdminSettings {
 				]
 			);
 
-			register_setting( 'raidboxes_premium_member_plugin_settings', $settingField['id'] );
+			register_setting(
+				'raidboxes_premium_member_plugin_settings',
+				$settingField['id'],
+				[
+					'sanitize_callback' => [$this, 'serialize_data']
+				]
+			);
 
 		}
 	}
 
+	public function serialize_data($input): string {
+		return serialize($input);
+	}
+
 	public function checkbox_callback( $args ) {
 		// Get the value of the setting we've registered with register_setting()
-		$value = get_option( $args['id'] );
+		$value = unserialize(get_option( $args['id'] ));
+
 		// Creating the checkbox field
 		echo '<div class="form-check">';
 		echo '<input name="' . $args['id'] . '" id="' . $args['id'] . '" type="checkbox" value="1" class="form-check-input" ' . checked( 1, $value, false ) . ' /> ';
@@ -96,7 +107,7 @@ class PremiumMemberAdminSettings {
 
 	public function number_callback( $args ) {
 		// Get the value of the setting we've registered with register_setting()
-		$value = get_option( $args['id'] );
+		$value = unserialize(get_option( $args['id'] ));
 		// Creating the number field
 		echo '<input type="number" name="' . $args['id'] . '" id="' . $args['id'] . '" value="'. esc_attr($value) .'" /> ' . $args['desc'];
 	}

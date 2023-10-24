@@ -144,7 +144,10 @@ class PremiumMember
 		$this->messageRegister->register_messages();
 
 		// check if registration is active (via Admin in the Backend)
-		if(!get_option('registration_active'))  {
+
+		$registration_active_state = unserialize(get_option('registration_active'));
+
+		if(!$registration_active_state)  {
 			echo '<div class="alert alert-warning" role="alert">'.__('Registration is currently not possible. Come please later again.', 'raidboxes_premium_member').'</div>';
 			return ob_get_clean();
 		}
@@ -246,6 +249,8 @@ class PremiumMember
 		// set default transient time for login expiration link
 		$transient_time = (HOUR_IN_SECONDS * 24);
 
+		$link_expiration_time = unserialize(get_option('link_expiration_time'));
+
 		// overwrite transient time if set in settings is defined
 		if(!empty(get_option('link_expiration_time')) && is_numeric(intval(get_option('link_expiration_time')))) {
 			$transient_time = (HOUR_IN_SECONDS * get_option('link_expiration_time'));
@@ -325,8 +330,10 @@ class PremiumMember
 		// get error messages
 		$this->messageRegister->register_messages();
 
+		$login_active_state = unserialize(get_option('login_active'));
+
 		// check if login is active
-		if(!get_option('login_active')) {
+		if(!$login_active_state) {
 			echo '<div class="alert alert-danger" role="alert">'.__('Login is currently not possible. Please come later again.', 'raidboxes_premium_member').'</div>';
 		}
 
@@ -343,7 +350,7 @@ class PremiumMember
 				<input type="password" name="user_password" id="user_password" class="form-control" value="">
 			</div>
 			<div class="form-group">
-				<button type="submit" class="btn btn-primary" <?php echo (get_option('login_active')) ? '' : 'disabled'; ?>><?php _e('Login', 'raidboxes_premium_member'); ?></button>
+				<button type="submit" class="btn btn-primary" <?php echo ($login_active_state) ? '' : 'disabled'; ?>><?php _e('Login', 'raidboxes_premium_member'); ?></button>
 			</div>
 		</form>
 		<?php
