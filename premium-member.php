@@ -540,11 +540,8 @@ class PremiumMember
 
 	public function load_plugin_textdomain()
 	{
-		// vars
+		// set domain value
 		$domain = $this->plugin_textdomain;
-
-		var_dump($this->plugin_textdomain);
-		var_dump($this->get_locale());
 
 		$locale = apply_filters('plugin_locale', $this->get_locale(), $domain);
 		$mofile = $domain . '-' . $locale . '.mo';
@@ -554,8 +551,6 @@ class PremiumMember
 
 		// redirect missing translations
 		$mofile = str_replace('en_EN', 'en_EN', $mofile);
-
-		var_dump($this->get_path('language/' . $mofile));
 
 		// load from plugin lang folder
 		load_textdomain($domain, $this->get_path('language/' . $mofile));
