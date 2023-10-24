@@ -366,7 +366,7 @@ class PremiumMember
 					do_action('wp_login', $user_data['user_login']);
 
 					// remove key after registration
-					delete_option('pm_' . $verification_key);
+					delete_transient('pm_' . $verification_key);
 
 					// redirect new user to user detail page
 					wp_redirect(home_url() . '/user-detail-page/');
