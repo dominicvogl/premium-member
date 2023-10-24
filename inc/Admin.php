@@ -44,36 +44,44 @@ class PremiumMemberAdminSettings {
 			'raidboxes_premium_member_plugin_settings' // page
 		);
 
-		add_settings_field(
-			'checkbox_1', // id
-			'Checkbox One', // title
-			array( $this, 'checkbox_callback' ),
-			'raidboxes_premium_member_plugin_settings',
-			'checkbox_section',
-			array( 'id' => 'checkbox_1', 'desc' => 'This is a description for checkbox 1.' )
-		);
+		$settingfields = [
+			[
+				"id" => "registration_active",
+				"title" => __('Are users able to register new Account?', 'raidboxes_premium_member'),
+				"description" => __( "Enable/Disables the registration", 'raidboxes_premium_member'),
+				"callback" => "checkbox_callback",
+			],
+			[
+				"id" => "login_active",
+				"title" => __('Should users be able to login?', 'raidboxes_premium_member'),
+				"description" => "Enable/Disables the possibility to login ",
+				"callback" => "checkbox_callback",
+			],
+			[
+				"id" => "link_expiration_time",
+				"title" => __('User Registration Link expiration time', 'raidboxes_premium_member'),
+				"description" => "Overwrite the time how long the login link is valid? (in hours). Default are 24 hours.",
+				"callback" => "number_callback",
+			]
+		];
 
-		add_settings_field(
-			'checkbox_2', // id
-			'Checkbox Two', // title
-			array( $this, 'checkbox_callback' ),
-			'raidboxes_premium_member_plugin_settings',
-			'checkbox_section',
-			array( 'id' => 'checkbox_2', 'desc' => 'This is a description for checkbox 2.' )
-		);
+		foreach($settingfields as $settingField) {
 
-		add_settings_field(
-			'checkbox_3', // id
-			'Checkbox Three', // title
-			array( $this, 'checkbox_callback' ),
-			'raidboxes_premium_member_plugin_settings',
-			'checkbox_section',
-			array( 'id' => 'checkbox_3', 'desc' => 'This is a description for checkbox 3.' )
-		);
+			add_settings_field(
+				$settingField['id'],
+				$settingField['title'],
+				[$this, $settingField['callback']],
+				'raidboxes_premium_member_plugin_settings',
+				'checkbox_section',
+				[
+					'id' => $settingField['id'],
+					'desc' => $settingField['description']
+				]
+			);
 
-		register_setting( 'raidboxes_premium_member_plugin_settings', 'checkbox_1' );
-		register_setting( 'raidboxes_premium_member_plugin_settings', 'checkbox_2' );
-		register_setting( 'raidboxes_premium_member_plugin_settings', 'checkbox_3' );
+			register_setting( 'raidboxes_premium_member_plugin_settings', $settingField['id'] );
+
+		}
 	}
 
 	public function checkbox_callback( $args ) {
@@ -84,6 +92,13 @@ class PremiumMemberAdminSettings {
 		echo '<input name="' . $args['id'] . '" id="' . $args['id'] . '" type="checkbox" value="1" class="form-check-input" ' . checked( 1, $value, false ) . ' /> ';
 		echo '<label for="' . $args['id'] . '" class="form-check-label"> ' . $args['desc'] . '</label> ';
 		echo '</div>';
+	}
+
+	public function number_callback( $args ) {
+		// Get the value of the setting we've registered with register_setting()
+		$value = get_option( $args['id'] );
+		// Creating the number field
+		echo '<input type="number" name="' . $args['id'] . '" id="' . $args['id'] . '" value="'. esc_attr($value) .'" /> ' . $args['desc'];
 	}
 
 }
