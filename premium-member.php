@@ -19,6 +19,17 @@ if (!defined('ABSPATH')) {
 require_once plugin_dir_path( __FILE__ ) . 'MessageRegister.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/Admin.php';
 
+
+register_deactivation_hook(__FILE__, 'deactivate_rpm');
+
+function deactivate_rpm()
+{
+	// remove options
+	$plugin = new PremiumMember();
+	$plugin->plugin_deactivate();
+}
+
+
 /**
  * Premium Member Plugin Class
  */
@@ -50,18 +61,60 @@ class PremiumMember
 		$this->create_shortcodes();
 		// load textdomain for the plugin
 		$this->load_plugin_textdomain();
-
 	}
 
-	public function install_plugin()
-	{
-		// handle install process
+	public function plugin_deactivate() {
+		// Write a message to the PHP error log
+		error_log("The plugin_uninstall function was called.");
+
+		$is_deletion_active = unserialize(get_option('delete_plugin_data'));
+
+		error_log($is_deletion_active);
+
+		if( $is_deletion_active === '1') {
+
+			global $wpdb;
+
+			error_log("Deletion is active");
+
+			$users = get_users(array('role' => 'rpm_role'));
+
+			foreach ($users as $user) {
+				wp_delete_user($user->ID);
+				error_log("Deleted user with ID: {$user->ID}");
+			}
+
+			// remove the role
+			remove_role('rpm_role');
+
+			// Get all transients that start with 'pm_'
+			$transients = $wpdb->get_col("SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '_transient_pm_%' OR option_name LIKE '_transient_timeout_pm_%';");
+			foreach($transients as $transient) {
+				// Strip away the WordPress prefix in order to use WordPress functions
+				$transient = str_replace('_transient_timeout_', '', $transient);
+				$transient = str_replace('_transient_', '', $transient);
+				delete_transient($transient);
+			}
+
+			error_log("Deleted all options, roles, users with role 'rpm_role', and transients starting with 'pm_'");
+
+			// remove the options from the admin page options
+			// can be improved to load the field names from the Admin Class, but for now it's ok to prevent missing something
+			$options_to_delete = ['delete_plugin_data', 'registration_active', 'login_active', 'link_expiration_time'];
+
+			foreach($options_to_delete as $option) {
+				delete_option($option);
+			}
+
+
+
+
+			error_log("Deleted all options and roles");
+			flush_rewrite_rules();
+		}
 	}
 
-	public function uninstall_plugin()
-	{
-		// handle uninstall process
-	}
+
 
 	public function add_roles()
 	{
@@ -106,7 +159,7 @@ class PremiumMember
 	 */
 	public function add_user_role(): void
 	{
-		add_role('raidboxes_premium_member', 'Raidboxes Premium Member', [
+		add_role('rpm_role', __('Raidboxes VIP Member', $this->plugin_textdomain), [
 			'read' => true,
 		]);
 	}
