@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
 
 // Include the MessageRegister class.
 require_once plugin_dir_path( __FILE__ ) . 'MessageRegister.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/Admin.php';
 
 /**
  * Premium Member Plugin Class
