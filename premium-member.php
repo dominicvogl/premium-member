@@ -191,7 +191,7 @@ class PremiumMember
 	public function plugin_stylesheets()
 	{
 		// get bootstrap minimized css
-		$bootstrap_css_url = plugins_url('node_modules/bootstrap/dist/css/bootstrap.min.css', __FILE__);
+		$bootstrap_css_url = plugins_url('vendor/bootstrap.min.css', __FILE__);
 
 		// Enqueue bootstrap style
 		wp_enqueue_style('plugin-bootstrap-style', $bootstrap_css_url);
