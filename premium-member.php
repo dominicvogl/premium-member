@@ -17,10 +17,11 @@ if (!defined('ABSPATH')) {
 
 require_once 'vendor/autoload.php';
 
-use \PHPUnit\Framework\TestCase;
+use inc\MessageRegister;
+use PHPUnit\Framework\TestCase;
 
 // Include the MessageRegister class.
-require_once plugin_dir_path( __FILE__ ) . 'MessageRegister.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/MessageRegister.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/Admin.php';
 
 
@@ -40,11 +41,11 @@ function deactivate_rpm()
 class PremiumMember extends TestCase
 {
 
-	private $messageRegister;
+	private MessageRegister $messageRegister;
 
-	public $plugin_path;
+	public string $plugin_path;
 
-	private $plugin_textdomain;
+	private string $plugin_textdomain;
 
 	public function __construct()
 	{
@@ -240,6 +241,7 @@ class PremiumMember extends TestCase
 	{
 		ob_start();
 
+		// call messages
 		$this->messageRegister->register_messages();
 
 		?>
@@ -272,6 +274,11 @@ class PremiumMember extends TestCase
 		<?php
 		return ob_get_clean();
 	}
+
+	/**
+	 * Add new User
+	 * @return void
+	 */
 
 	public function add_new_user()
 	{
@@ -326,6 +333,11 @@ class PremiumMember extends TestCase
 		}
 	}
 
+	/**
+	 * Send verification email to user and generate keys for verification, write into database
+	 * @param $user_data
+	 * @return true
+	 */
 	public function send_verification_email($user_data)
 	{
 
@@ -374,6 +386,11 @@ class PremiumMember extends TestCase
 		return true;
 	}
 
+	/**
+	 * check if verification key exists, if yes, create new user
+	 * @return void
+	 */
+
 	public function verify_account()
 	{
 		if (isset($_GET['action']) && $_GET['action'] == 'verify_account' && isset($_GET['key'])) {
@@ -414,7 +431,10 @@ class PremiumMember extends TestCase
 		}
 	}
 
-
+	/**
+	 * Load user login form
+	 * @return false|string
+	 */
 	public function user_login_form() {
 		// Start output buffering
 		ob_start();
@@ -453,6 +473,13 @@ class PremiumMember extends TestCase
 		return $output;
 	}
 
+
+	/**
+	 * Handle authentication errors
+	 * @param $username
+	 * @param $password
+	 * @return void
+	 */
 	public function handle_authentication_errors($username, $password) {
 		// Initialize messageRegister object
 
@@ -477,6 +504,10 @@ class PremiumMember extends TestCase
 		}
 	}
 
+	/**
+	 * Handle custom WordPress Login
+	 * @return void
+	 */
 	public function handle_custom_login() {
 
 		// check if we are in the login form
@@ -507,7 +538,7 @@ class PremiumMember extends TestCase
 		}
 	}
 
-
+	// render custom user detail page in the frontend
 	public function user_detail_page()
 	{
 		// Check if user is logged in
@@ -584,6 +615,7 @@ class PremiumMember extends TestCase
 		return $output;
 	}
 
+	// handle password reset
 	public function handle_password_reset()
 	{
 		// Handle password reset logic here
@@ -630,11 +662,7 @@ class PremiumMember extends TestCase
 	}
 
 	/**
-	 * Load textdomain of the plugin for makint it translateable
-	 */
-
-	/**
-	 * Load textdomain of the plugin for makint it translateable
+	 * Load textdomain of the plugin for making it translateable
 	 */
 
 	public function load_plugin_textdomain()
@@ -655,11 +683,16 @@ class PremiumMember extends TestCase
 		load_textdomain($domain, $this->get_path('language/' . $mofile));
 	}
 
+	/**
+	 * get users language code
+	 * @return string
+	 */
 	public function get_locale(): string
 	{
 		return is_admin() && function_exists('get_user_locale') ? get_user_locale() : get_locale();
 	}
 
+	// get the plugin path and add the mofile path
 	public function get_path($path = ''): string
 	{
 		return $this->plugin_path . $path;

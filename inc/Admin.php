@@ -9,7 +9,8 @@ class PremiumMemberAdminSettings {
 		// Register settings to save your checkboxes' values
 		add_action( 'admin_init', array( $this, 'setup_sections' ) );
 
-//		add_action('admin_enqueue_scripts', array($this, 'admin_styles'));
+		// I like to use the WordPress default styles in the backend, feels more integrated
+		// add_action('admin_enqueue_scripts', array($this, 'admin_styles'));
 	}
 
 	public function create_plugin_settings_page() {
@@ -33,13 +34,16 @@ class PremiumMemberAdminSettings {
 				submit_button();
 				?>
 			</form>
-		</div> <?php
+		</div>
+		<?php
 	}
 
 	/**
 	 * Set up the sections for the plugin settings page.
 	 */
 	public function setup_sections() {
+
+		// define section for the option fields
 		add_settings_section(
 			'checkbox_section', // id
 			'Activate/Deactivate Plugins functionality', // title
@@ -47,35 +51,38 @@ class PremiumMemberAdminSettings {
 			'raidboxes_premium_member_plugin_settings' // page
 		);
 
+		// define needed fields
 		$settingfields = [
 			[
 				"id" => "registration_active",
 				"title" => __('Are users able to register new Account?', 'raidboxes_premium_member'),
-				"description" => __( "Enable/Disables the registration", 'raidboxes_premium_member'),
+				"description" => __( 'Enable/Disables the registration', 'raidboxes_premium_member'),
 				"callback" => "checkbox_callback",
 			],
 			[
 				"id" => "login_active",
 				"title" => __('Should users be able to login?', 'raidboxes_premium_member'),
-				"description" => "Enable/Disables the possibility to login ",
+				"description" => __('Enable/Disables the possibility to login', 'raidboxes_premium_member'),
 				"callback" => "checkbox_callback",
 			],
 			[
 				"id" => "link_expiration_time",
 				"title" => __('User Registration Link expiration time', 'raidboxes_premium_member'),
-				"description" => "Overwrite the time how long the login link is valid? (in hours). Default are 24 hours.",
+				"description" => __('Overwrite the time how long the login link is valid? (in hours). Default are 24 hours.', 'raidboxes_premium_member'),
 				"callback" => "number_callback",
 			],
 			[
 				"id" => "delete_plugin_data",
 				"title" => __('Data handling', 'raidboxes_premium_member'),
-				"description" => "When deactivating the plugin, should all plugin data be cleared?",
+				"description" => __('When deactivating the plugin, should all plugin data be cleared?', 'raidboxes_premium_member'),
 				"callback" => "checkbox_callback",
 			],
 		];
 
+		// loop through the settings fields and register them
 		foreach($settingfields as $settingField) {
 
+			// add field settings to section
 			add_settings_field(
 				$settingField['id'],
 				$settingField['title'],
@@ -88,18 +95,19 @@ class PremiumMemberAdminSettings {
 				]
 			);
 
+			// register the new settings
 			register_setting(
 				'raidboxes_premium_member_plugin_settings',
 				'raidboxes_premium_member_plugin_settings'
 			);
-
 		}
 	}
 
-	public function serialize_data($input) {
-		return $input;
-	}
-
+	/**
+	 * Callback for Settings Field, markup for checkbox
+	 * @param $args
+	 * @return void
+	 */
 	public function checkbox_callback( $args ) {
 		$options = get_option('raidboxes_premium_member_plugin_settings');
 		$value = $options[$args['id']] ?? false;
@@ -110,6 +118,11 @@ class PremiumMemberAdminSettings {
 		echo '</div>';
 	}
 
+	/**
+	 * Callback for Settings Field, markup for Numbers input
+	 * @param $args
+	 * @return void
+	 */
 	public function number_callback( $args ) {
 		$options = get_option('raidboxes_premium_member_plugin_settings');
 		$value = $options[$args['id']] ?? '';

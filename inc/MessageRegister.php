@@ -1,9 +1,14 @@
 <?php
 // MessageRegister.php
 
-class MessageRegister {
+namespace inc;
+use WP_Error;
+
+class MessageRegister
+{
 
 	/**
+	 * Handle Wordpress errors
 	 * @return mixed|WP_Error
 	 */
 	public function handle_errors()
@@ -12,6 +17,11 @@ class MessageRegister {
 		return $wp_error ?? ($wp_error = new WP_Error(null, null, null));
 	}
 
+	/**
+	 * Register the error messages and render in Callout boxes
+	 * @param $status
+	 * @return void
+	 */
 	public function register_messages($status = 'error')
 	{
 
